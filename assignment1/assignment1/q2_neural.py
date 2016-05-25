@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 from q1_softmax import softmax
-from q2_sigmoid import sigmoid, sigmoid_grad
+from q2_sigmoid import sigmoid, sigmoid_grad    
 from q2_gradcheck import gradcheck_naive
 
 def forward_backward_prop(data, labels, params, dimensions):
@@ -32,7 +32,11 @@ def forward_backward_prop(data, labels, params, dimensions):
     ### END YOUR CODE
     
     ### YOUR CODE HERE: backward propagation
-    gradW2 = 
+    delta = labels - prediction_vec
+    gradW2 = hiddens.T.dot(delta)
+    gradb2 = np.sum(delta, axis = 0)
+    delta = delta.T.dot(W2) * sigmoid_grad(hiddens)
+    gradW1 = data.T.dot(delta)
     ### END YOUR CODE
     
     ### Stack gradients (do not modify)
