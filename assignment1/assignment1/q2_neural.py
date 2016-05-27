@@ -35,8 +35,9 @@ def forward_backward_prop(data, labels, params, dimensions):
     delta = labels - prediction_vec
     gradW2 = hiddens.T.dot(delta)
     gradb2 = np.sum(delta, axis = 0)
-    delta = delta.T.dot(W2) * sigmoid_grad(hiddens)
-    gradW1 = data.T.dot(delta)
+    delta = delta.T.dot(W2.T) * sigmoid_grad(hiddens)
+    gradb1 = np.sum(delta, axis = 0)
+    gradW1 = data.T.dot(delta)  
     ### END YOUR CODE
     
     ### Stack gradients (do not modify)
