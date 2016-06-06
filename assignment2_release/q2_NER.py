@@ -24,9 +24,9 @@ class Config(object):
   hidden_size = 100
   max_epochs = 24 
   early_stopping = 2
-  dropout = 0.9
+  dropout = 0.5
   lr = 0.001
-  l2 = 0.001
+  l2 = 0.1
   window_size = 3
 
 class NERModel(LanguageModel):
@@ -92,7 +92,7 @@ class NERModel(LanguageModel):
     (Don't change the variable names)
     """
     ### YOUR CODE HERE
-    self.input_placeholder = tf.placeholder(tf.float32, shape=(None, self.config.window_size), name = 'inputs')
+    self.input_placeholder = tf.placeholder(tf.int32, shape=(None, self.config.window_size), name = 'inputs')
     self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, self.config.label_size), name ='labels')
     self.dropout_placeholder = tf.placeholder(tf.float32, name = 'dropout')
     ### END YOUR CODE
@@ -121,10 +121,11 @@ class NERModel(LanguageModel):
     ### YOUR CODE HERE
     feed_dict = {
       self.input_placeholder: input_batch, 
-      self.dropout_placeholder: dropout
     }
     if label_batch is not None:
       feed_dict[self.labels_placeholder] = label_batch
+    if dropout is not None:
+      feed_dict[self.dropout_placeholder] = dropout
     ### END YOUR CODE
     return feed_dict
 
@@ -154,8 +155,11 @@ class NERModel(LanguageModel):
     """
     # The embedding lookup is currently only implemented for the CPU
     with tf.device('/cpu:0'):
+      # check the dimensions of window later(see how embedding works)
       ### YOUR CODE HERE
-      L = tf.Variable(tf.random_uniform([self.wv, self.config.embed_size], -1.0, 1.0), name = 'L')
+      L = tf.get_variable('L', shape = [len(self.wv), self.config.embed_size])
+      window = tf.nn.embedding_lookup(L, self.input_placeholder)
+      window = tf.reshape(window, (-1, self.config.window_size * self.config.embed_size))
       ### END YOUR CODE
       return window
 
@@ -187,7 +191,22 @@ class NERModel(LanguageModel):
       output: tf.Tensor of shape (batch_size, label_size)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    window_size = self.config.window_size
+    embed_size = self.config.embed_size
+    hidden_size = self.config.hidden_size
+    label_size = self.config.label_size
+    with tf.variable_scope('Layer', initializer=xavier_weight_init()) as scope:
+      W = tf.get_variable('W', shape = [window_size*embed_size, hidden_size])
+      b1 = tf.get_variable('b1',shape = [hidden_size] )
+      hiddens = tf.nn.tanh((tf.matmul(window, W) + b1))
+      if self.config.l2:
+         tf.add_to_collection('L2', self.config.l2 * (tf.nn.l2_loss(W)))
+    with tf.variable_scope('Softmax', initializer=xavier_weight_init()) as scope:
+      U = tf.get_variable('U', shape = [hidden_size, label_size])
+      b2 = tf.get_variable('b2',shape = [label_size] )  
+      if self.config.l2:
+         tf.add_to_collection('L2', self.config.l2 * (tf.nn.l2_loss(U)))
+    output =  tf.nn.dropout((tf.matmul(hiddens, U) + b2), self.dropout_placeholder)  
     ### END YOUR CODE
     return output 
 
@@ -202,7 +221,8 @@ class NERModel(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    CE = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(y, self.labels_placeholder))
+    loss =  CE + tf.add_n(tf.get_collection('L2'))
     ### END YOUR CODE
     return loss
 
@@ -226,7 +246,8 @@ class NERModel(LanguageModel):
       train_op: The Op for training.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    optimizer = tf.train.AdamOptimizer(self.config.lr)
+    train_op = optimizer.minimize(loss)
     ### END YOUR CODE
     return train_op
 
