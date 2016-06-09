@@ -79,7 +79,9 @@ class RNNLM_Model(LanguageModel):
     (Don't change the variable names)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    self.input_placeholder = tf.placeholder(tf.int32, shape=(None, self.config.num_steps), name = 'inputs')
+    self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, config.num_steps), name ='labels')
+    self.dropout_placeholder = tf.placeholder(tf.float32, name = 'dropout')
     ### END YOUR CODE
   
   def add_embedding(self):
@@ -101,7 +103,9 @@ class RNNLM_Model(LanguageModel):
     # The embedding lookup is currently only implemented for the CPU
     with tf.device('/cpu:0'):
       ### YOUR CODE HERE
-      raise NotImplementedError
+      L = tf.get_variable('L', shape = [len(self.vocab), self.config.embed_size])
+      embed = tf.nn.embedding_lookup(L, input_placeholder)
+      inputs = [tf.squeeze(x, [1]) for x in tf.split(1, self.congif.num_steps, embed)]
       ### END YOUR CODE
       return inputs
 
@@ -117,7 +121,7 @@ class RNNLM_Model(LanguageModel):
           U:   (hidden_size, len(vocab))
           b_2: (len(vocab),)
 
-    Args:
+    args:
       rnn_outputs: List of length num_steps, each of whose elements should be
                    a tensor of shape (batch_size, embed_size).
     Returns:
@@ -125,7 +129,10 @@ class RNNLM_Model(LanguageModel):
                (batch_size, len(vocab)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    with tf.variable_scope('projection'):
+      U = tf.Variable('U', shape=[hidden_size, len(self.vocab)])
+      b_2 = tf.Variable('b2', shape=[len(self.vocab)])
+      outputs = [(tf.matmul(x, U) + b_2) for x in rnn_outputs]
     ### END YOUR CODE
     return outputs
 
@@ -140,7 +147,7 @@ class RNNLM_Model(LanguageModel):
       loss: A 0-d tensor (scalar)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    
     ### END YOUR CODE
     return loss
 
