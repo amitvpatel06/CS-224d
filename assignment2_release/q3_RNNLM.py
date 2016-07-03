@@ -27,7 +27,7 @@ class Config(object):
   embed_size = 50
   hidden_size = 100
   num_steps = 10
-  max_epochs = 11
+  max_epochs = 16
   early_stopping = 2
   dropout = 0.9
   lr = 0.001
@@ -329,7 +329,7 @@ def generate_sentence(session, model, config, *args, **kwargs):
   """Convenice to generate a sentence from the model."""
   return generate_text(session, model, config, *args, stop_tokens=['<eos>'], **kwargs)
 
-def test_RNNLM():
+def run_RNN():
   config = Config()
   gen_config = deepcopy(config)
   gen_config.batch_size = gen_config.num_steps = 1
